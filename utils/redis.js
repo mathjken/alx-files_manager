@@ -1,32 +1,62 @@
-{% extends 'partials/base.html' %}
-{% block title %}Order Page{% endblock %}
+import redis from 'redis';
+import { promisify } from 'util';
 
-{% block content %}
-{% include 'partials/topside.html' %}
-<div class="row my-4">
-    <div class="col-md-4"></div>
-    <div class="col-md-8">
-        <table class="table bg-white">
-            <thead class="bg-info text-white">
-                <tr>
-                    <th scope="col">Product</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Quantity</th>
-                    <th scope="col">Odered by</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in order %}
-                <tr>
-                    <td>{{ order.name }}</td>
-                    <td>{{ order.name.category }}</td>
-                    <td>{{ order.order_quantity }}</td>
-                    <td>{{ order.customer.username }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+/**
+ * Class for performing operations with Redis service
+ */
+class RedisClient {
+  constructor() {
+    this.client = redis.createClient();
+    this.getAsync = promisify(this.client.get).bind(this.client);
 
-{% endblock %}
+    this.client.on('error', (error) => {
+      console.log(`Redis client not connected to the server: ${error.message}`);
+    });
+
+    this.client.on('connect', () => {
+      // console.log('Redis client connected to the server');
+    });
+  }
+
+  /**
+   * Checks if connection to Redis is Alive
+   * @return {boolean} true if connection alive or false if not
+   */
+  isAlive() {
+    return this.client.connected;
+  }
+
+  /**
+   * gets value corresponding to key in redis
+   * @key {string} key to search for in redis
+   * @return {string}  value of key
+   */
+  async get(key) {
+    const value = await this.getAsync(key);
+    return value;
+  }
+
+  /**
+   * Creates a new key in redis with a specific TTL
+   * @key {string} key to be saved in redis
+   * @value {string} value to be asigned to key
+   * @duration {number} TTL of key
+   * @return {undefined}  No return
+   */
+  async set(key, value, duration) {
+    this.client.setex(key, duration, value);
+  }
+
+  /**
+   * Deletes key in redis service
+   * @key {string} key to be deleted
+   * @return {undefined}  No return
+   */
+  async del(key) {
+    this.client.del(key);
+  }
+}
+
+const redisClient = new RedisClient();
+
+export default redisClient;
