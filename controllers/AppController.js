@@ -7,7 +7,7 @@ class AppController {
    * by using the 2 utils created previously:
    * { "redis": true, "db": true } with a status code 200
    */
-  static getStatus(request, response) {
+  static getStatus(_, response) {
     const status = {
       redis: redisClient.isAlive(),
       db: dbClient.isAlive(),
@@ -20,7 +20,7 @@ class AppController {
    * { "users": 12, "files": 1231 }
    *  with a status code 200
    */
-  static async getStats(request, response) {
+  static async getStats(_, response) {
     const stats = {
       users: await dbClient.nbUsers(),
       files: await dbClient.nbFiles(),
